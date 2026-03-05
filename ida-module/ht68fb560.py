@@ -24,6 +24,7 @@ from ida_name import *
 from ida_netnode import *
 import ida_ida
 import json
+import traceback
 
 BANK_COUNT = 6
 
@@ -344,6 +345,10 @@ class HoltekProcessor(processor_t):
 		if itype is None:
 			return 0
 
+		# Ensure stale operand data cannot leak between decodes.
+		insn.Op1.type = o_void
+		insn.Op2.type = o_void
+
 		idef = INSN_DEFS[itype]
 		htop = idef[IDEF_OP_TYPE]
 
@@ -378,7 +383,7 @@ class HoltekProcessor(processor_t):
 			insn.Op2.value = get_opvalue_for_opcode(itype, opcode)
 		elif htop == HTOP_ADDR:
 			insn.Op1.type = o_near
-			insn.Op1.dtype = dt_byte
+			insn.Op1.dtype = dt_code
 			insn.Op1.addr = get_opvalue_for_opcode(itype, opcode)
 		elif htop == HTOP_BIT:
 			addr, bit = get_opvalue_for_opcode(itype, opcode)
@@ -390,7 +395,7 @@ class HoltekProcessor(processor_t):
 			insn.Op2.value = bit
 
 		insn.itype = itype
-		return 1
+		return insn.size
 
 
 	def _create_addm_pcl_jump_table(self, insn):
@@ -401,7 +406,7 @@ class HoltekProcessor(processor_t):
 
 		named_targets = {}
 
-		for entry_ea in xrange(jt_start, jt_end + 1):
+		for entry_ea in range(jt_start, jt_end + 1):
 			entry_index = entry_ea - jt_start
 			add_cref(insn.ea, entry_ea, fl_JN)
 			MakeName(entry_ea, 'jtbl_%04X_case_%02X' % (insn.ea, entry_index))
@@ -418,7 +423,7 @@ class HoltekProcessor(processor_t):
 					named_targets[jt_target] = [entry_index]
 
 		# now apply the names for named targets, if we saw any
-		for target, index_list in named_targets.iteritems():
+		for target, index_list in named_targets.items():
 			index_strs = '_'.join(['%02X' % i for i in index_list])
 			MakeName(target, 'jtbl_%04X_case_target_%s' % (insn.ea, index_strs))
 
@@ -482,47 +487,58 @@ class HoltekProcessor(processor_t):
 		return 1
 
 	def notify_out_operand(self, ctx, op):
-		optype = op.type
-		if optype == o_reg:
-			ctx.out_register('A')
-		elif optype == o_imm:
-			ctx.out_value(op)
-		elif optype == o_mem:
-			r = ctx.out_name_expr(op, op.addr, BADADDR)
-			if not r:
-				ctx.out_tagon(COLOR_ERROR)
-				ctx.out_btoa(op.addr, 16)
-				ctx.out_tagoff(COLOR_ERROR)
-				remember_problem(PR_NONAME, ctx.insn.ea)
-		elif optype == o_near:
-			r = ctx.out_name_expr(op, op.addr, BADADDR)
-			if not r:
-				ctx.out_tagon(COLOR_ERROR)
-				ctx.out_btoa(op.addr, 16)
-				ctx.out_tagoff(COLOR_ERROR)
-				remember_problem(PR_NONAME, ctx.insn.ea)
-		else:
+		try:
+			optype = op.type
+			if optype == o_reg:
+				ctx.out_register('A')
+			elif optype == o_imm:
+				ctx.out_value(op, OOFW_IMM)
+			elif optype == o_mem:
+				r = ctx.out_name_expr(op, op.addr, BADADDR)
+				if not r:
+					ctx.out_tagon(COLOR_ERROR)
+					ctx.out_btoa(op.addr, 16)
+					ctx.out_tagoff(COLOR_ERROR)
+					remember_problem(PR_NONAME, ctx.insn.ea)
+			elif optype == o_near:
+				r = ctx.out_name_expr(op, op.addr, BADADDR)
+				if not r:
+					ctx.out_tagon(COLOR_ERROR)
+					ctx.out_btoa(op.addr, 16)
+					ctx.out_tagoff(COLOR_ERROR)
+					remember_problem(PR_NONAME, ctx.insn.ea)
+			else:
+				return -1
+
+			return 1
+		except Exception as e:
+			print('notify_out_operand failed at 0x%X: %s' % (ctx.insn.ea, e))
+			traceback.print_exc()
 			return -1
 
-		return 1
-
 	def notify_out_insn(self, ctx):
-		insn = ctx.insn
-		ctx.out_mnem()
-		if INSN_DEFS[insn.itype][IDEF_OP_TYPE] == HTOP_BIT:
-			ctx.out_one_operand(0)
-			ctx.out_symbol('.')
-			ctx.out_one_operand(1)
-		else:
-			for i in xrange(0, 2):
-				op = ctx.insn[i]
-				if op.type != o_void:
-					if i > 0:
-						ctx.out_symbol(',')
-						ctx.out_char(' ')
-					ctx.out_one_operand(i)
-		ctx.set_gen_cmt()
-		ctx.flush_outbuf()
+		try:
+			insn = ctx.insn
+			ctx.out_mnem()
+			if INSN_DEFS[insn.itype][IDEF_OP_TYPE] == HTOP_BIT:
+				ctx.out_one_operand(0)
+				ctx.out_symbol('.')
+				ctx.out_one_operand(1)
+			else:
+				for i in range(0, 2):
+					op = ctx.insn[i]
+					if op.type != o_void:
+						if i > 0:
+							ctx.out_symbol(',')
+							ctx.out_char(' ')
+						ctx.out_one_operand(i)
+			ctx.set_gen_cmt()
+			ctx.flush_outbuf()
+			return 1
+		except Exception as e:
+			print('notify_out_insn failed at 0x%X: %s' % (ctx.insn.ea, e))
+			traceback.print_exc()
+			return 0
 
 
 	def notify_get_autocmt(self, insn):
