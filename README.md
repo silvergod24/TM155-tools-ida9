@@ -1,82 +1,41 @@
-Here are some tools for messing with the Tecknet HyperTrak Gaming Mouse
-(M009-V2) -- or as it's referred to by its OEM, the TM155.
+This project uses one prompt in order to create a new processor module 
+in IDAPython, for IDA9.3
 
-This repository accompanies my series of blog posts about reverse-engineering
-this mouse's drivers and firmware. Find it here:
-https://wuffs.org/blog/mouse-adventures
+## How This Works
 
-All these tools are supplied under the MIT License. If you end up doing
-something cool (or uncool) with this stuff, then let me know - I'd love to
-know about it! There's bound to be other devices using these chips out there...
+Instead of forcing an AI to read a 500-page PDF datasheet and guess how to write a decompiler, this prompt enforces a strict three-phase pipeline:
 
-# Included Tools
+1. **The Shortcut Phase:** The AI is instructed to first search for existing, open-source machine-readable definitions of your target architecture (like Ghidra SLEIGH files or GNU Binutils C source code). These are much more accurate than parsing PDFs.
+2. **The Extraction Phase (Fallback):** If shortcuts don't exist, the AI will write a targeted Python script using visual/tabular extraction libraries (like `camelot-py` or `tabula-py`) to rip the exact instruction bitmasks and register definitions out of your datasheet. 
+3. **The Generation Phase:** The AI takes the precise architecture data and wraps it in a modern, IDA 9.3-compliant `processor_t` class template, utilizing modern `ida_typeinf`, modern segment creation, and strict `try/except` diagnostic rendering blocks.
 
-## tm155-mac
+## How to Use the Prompt
 
-A native application to control the TM155 from macOS, written using Swift and
-Cocoa. Currently heavily under construction. This is my first time using Swift
-and my first time using Cocoa, so the code's a bit junk, but it's a start!
+1. Grab the **Prompt** text.
+2. Fill in the `[INSERT ARCHITECTURE NAME HERE]` bracket.
+3. Provide the AI with the architecture data (if the shortcut doesn't work). You can do this by:
+   * Attaching the official PDF datasheet.
+   * Pasting a link to the datasheet.
+4. Provide the AI with a **Reference Template**. (Use a working, modern IDA 9.3 Python script, like the Holtek HT68FB560 script, so the AI knows exactly how to structure its classes and loops).
+5. Submit the prompt to the AI. 
 
-This depends on the embeddable editing widgets provided by
-[Hex Fiend](https://github.com/ridiculousfish/HexFiend/)'s framework.
+## Integrating the Generated Module into IDA Pro
 
-## Firmware Patches
+The AI will output two primary files: an `[architecture].py` file and an `[architecture].json` file. Here is how to load them:
 
-I've put together some patches to the TM155 firmware to fix bugs.
-See the [patches.md](patches.md) file for details on these.
+### 1. Place the Files
+Copy both the `.py` and `.json` files into your IDA Pro user `procs` directory. Do not place them in the main IDA installation folder; use your user-specific application data folder:
+* **Windows:** `%APPDATA%\Hex-Rays\IDA Pro\procs\`
+* **Linux / macOS:** `~/.idapro/procs/`
 
-## mtp-extractor
+*(Note: If the `procs` folder does not exist, simply create it).*
 
-This tool is written in C++ and uses the library provided as part of Holtek
-I3000 to extract the code and data from a MTP file (a package produced by the
-Holtek build tools ready for flashing to a Holtek microcontroller). Alas, for
-this reason, it's Windows-only.
+### 2. Test the Module
+1. Launch IDA Pro 9.3.
+2. Drag and drop your raw firmware `.bin` or `.rom` file into the IDA window.
+3. In the "Load a new file" dialog, look at the **Processor type** dropdown menu.
+4. Select your newly generated processor from the list.
+5. Click **OK**.
 
-To compile and run it, you'll need the files located inside `ISPDLL/x86` after
-installing I3000. Tested with Visual C++ 2017. Compile and run as follows:
-
-    > cl mtp-extractor.cpp ISPDLL.lib
-	> mtp-extractor M009-V2.mtp
-
-To get your filthy paws on the MTP file, you'll need to install the TeckNet
-drivers, grab your tool of choice for messing with Windows resources (I used
-Resource Hacker) and open up `Update/x86/FwUpdate.exe`. There is one resource
-inside the 'MTP' group. This is the one.
-
-## ht68-disasm
-
-This tool is written in Python 3. It takes the `program.bin` file output by
-mtp-extractor and turns it into vaguely-readable assembly. Not quite IDA, but
-it's better than nothing!
-
-To run it, you'll need to install the parsec module from PyPI and you'll need
-to place a couple of files from the HT-IDE3000 install package into a
-`vendor-data` subfolder:
-
-- **HT68FB560.fmt**: found in the MCU subfolder
-- **HT68FB560.inc**: found in the Include subfolder
-
-Then, invoke it as follows:
-
-    $ python ht68-disasm.py HT68FB560 program.bin > program.asm
-
-## ht68fb560.py for IDA
-
-This is an IDAPython processor module that lets you disassemble and analyse
-this mouse's firmware with... relative ease, I should probably say.
-
-Place the `ht68fb560.py` and `ht68fb560.json` files from the `ida-module`
-directory into the following location:
-
-- Windows: `%APPDATA%/Hex-Rays/IDA Pro/procs`
-- Linux, Mac: `~/.idapro/procs`
-
-Developed for and tested with IDA 7.0.
-
-# Proprietary Downloads
-
-You can obtain these packages from the following locations:
-
-- **HT-IDE3000***: http://www.holtek.com/ice-software
-- **I3000**: http://www.holtek.com/programmer-software
-- **TeckNet M009-V2 Drivers**: http://www.tecknet.co.uk/support/m009-v2.html
+### 3. Troubleshooting
+Because the Master Prompt forces the AI to wrap its rendering callbacks (`notify_out_insn` and `notify_out_operand`) in `try/except` blocks, **IDA will not silently fail.** If the AI hallucinates a bad instruction mask or makes a deprecated API call, look at the **Output Window** at the bottom of the IDA interface. It will print a bright red Python traceback detailing exactly which line failed. You can simply copy that error, paste it back to the AI, and say: *"Fix this specific error adhering to the IDA 9.3 API rules."*

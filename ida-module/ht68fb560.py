@@ -9,7 +9,8 @@
 
 from ida_bytes import *
 from ida_diskio import *
-from ida_enum import *
+########### FIX: use ida_typeinf instead of data_enum ############
+from ida_typeinf import *
 from ida_ua import *
 from ida_idp import *
 from ida_auto import *
@@ -22,9 +23,15 @@ from ida_offset import *
 from ida_segment import *
 from ida_name import *
 from ida_netnode import *
+# FIX - load the BADADDR (constant representing an invalid memory address, e.g. 0xFFFFFFFF) needs to be imported into the global namespace
+from ida_idaapi import BADADDR
 import ida_ida
 import json
 import traceback
+# FIX: add idc to support basic enum helper functions 
+import idc
+# FIX - import to update legacy functions created in earlier script
+import ida_bytes
 
 BANK_COUNT = 6
 
@@ -264,21 +271,32 @@ class HoltekProcessor(processor_t):
 
 
 	def _ensure_ram_segment_exists(self):
-		segm = get_segm_by_name('HTRAM')
-		if segm:
-			self.ram_addr = segm.start_ea
-		else:
-			# alright, we want to create our RAM segment
-			# find some space to do that in
-			ram_size = 0x100 * BANK_COUNT
-			ram_start = free_chunk(1, ram_size, -0xF)
-			ram_end = ram_start + ram_size
-			segm = add_segm_ex(ram_start, ram_end, ram_start >> 4, 0, saAbs, scPriv, ADDSEG_NOSREG)
-			set_segm_name(ram_start, 'HTRAM')
-			set_segm_type(ram_start, SEG_IMEM)
-			self.ram_addr = ram_start
+			segm = get_segm_by_name('HTRAM')
+			if segm:
+				self.ram_addr = segm.start_ea
+			else:
+				# alright, we want to create our RAM segment
+				# find some space to do that in
+				ram_size = 0x100 * BANK_COUNT
+				
+				# FIX: Use a hardcoded, safe memory address instead of the deprecated free_chunk API
+				ram_start = 0x10000 
+				
+				ram_end = ram_start + ram_size
+				# FIX: Create a modern segment configuration object
+				seg = segment_t()
+				seg.start_ea = ram_start
+				seg.end_ea = ram_end
+				seg.align = saAbs
+				seg.comb = scPriv
+				seg.bitness = 0 # 0 indicates 16-bit mode
+				seg.type = SEG_IMEM # <--- FIX: Put the type of the segment in the configuration object
+				# Not using a function
+				# Add the segment using the 4-argument IDA 9.x API
+				add_segm_ex(seg, 'HTRAM', 'DATA', ADDSEG_NOSREG)
+				self.ram_addr = ram_start
 
-			self._prepare_db()
+				self._prepare_db()
 
 
 	def _prepare_db(self):
@@ -287,11 +305,13 @@ class HoltekProcessor(processor_t):
 		for addr, reg in enumerate(REG_DEFS):
 			if reg and 'bits' in reg:
 				prefix = str(reg['name']) + ':'
-				enum = add_enum(BADADDR, 'bit_' + str(reg['name']), 0)
+				# FIX - added the imported idc to enum function
+				enum = idc.add_enum(BADADDR, 'bit_' + str(reg['name']), 0)
 				bit_enums[addr] = enum
 				for bit, name in enumerate(reg['bits']):
 					if name:
-						add_enum_member(enum, prefix + str(name), bit, DEFMASK)
+						# FIX - added the imported idc to enum function
+						idc.add_enum_member(enum, prefix + str(name), bit, -1)
 
 		# fill all the register info in
 		for bank in range(6):
@@ -299,25 +319,27 @@ class HoltekProcessor(processor_t):
 			for offset, reg in enumerate(REG_DEFS):
 				if reg and ('banks' not in reg or bank in reg['banks']):
 					ea = self.ram_addr + (bank * 0x100) + offset
-					MakeByte(ea)
-					MakeName(ea, prefix + str(reg['name']))
-					set_cmt(ea, str(reg['comment']), True)
+					# FIX: Use modern data creation and idc naming APIs
+					ida_bytes.create_data(ea, ida_bytes.FF_BYTE, 1, BADADDR)
+					idc.set_name(ea, prefix + str(reg['name']))
+					idc.set_cmt(ea, str(reg['comment']), 1)
 
 					if offset in bit_enums:
 						self.helper.altset_ea(ea, bit_enums[offset], self.bitfield_enum_tag)
 
 		# name the interrupts
-		MakeName(0, 'ResetVector')
-		MakeName(4, 'Interrupt_INT0_Pin')
-		MakeName(8, 'Interrupt_INT1_Pin')
-		MakeName(0xC, 'Interrupt_USB')
-		MakeName(0x10, 'Interrupt_MFunct0')
-		MakeName(0x14, 'Interrupt_MFunct1')
-		MakeName(0x18, 'Interrupt_MFunct2')
-		MakeName(0x1C, 'Interrupt_MFunct3')
-		MakeName(0x20, 'Interrupt_SIM')
-		MakeName(0x24, 'Interrupt_SPIA')
-		MakeName(0x28, 'Interrupt_LVD')
+		# FIX: channged the naming functions of the interrupts
+		idc.set_name(0, 'ResetVector')
+		idc.set_name(4, 'Interrupt_INT0_Pin')
+		idc.set_name(8, 'Interrupt_INT1_Pin')
+		idc.set_name(0xC, 'Interrupt_USB')
+		idc.set_name(0x10, 'Interrupt_MFunct0')
+		idc.set_name(0x14, 'Interrupt_MFunct1')
+		idc.set_name(0x18, 'Interrupt_MFunct2')
+		idc.set_name(0x1C, 'Interrupt_MFunct3')
+		idc.set_name(0x20, 'Interrupt_SIM')
+		idc.set_name(0x24, 'Interrupt_SPIA')
+		idc.set_name(0x28, 'Interrupt_LVD')
 
 
 	def notify_init(self, idp_file):
@@ -409,8 +431,7 @@ class HoltekProcessor(processor_t):
 		for entry_ea in range(jt_start, jt_end + 1):
 			entry_index = entry_ea - jt_start
 			add_cref(insn.ea, entry_ea, fl_JN)
-			MakeName(entry_ea, 'jtbl_%04X_case_%02X' % (insn.ea, entry_index))
-
+			idc.set_name(entry_ea, 'jtbl_%04X_case_%02X' % (insn.ea, entry_index))
 			# diversion: if the jump is itself a branch, then we should
 			# name its target, too!
 			entry_op = get_wide_byte(entry_ea)
@@ -425,8 +446,7 @@ class HoltekProcessor(processor_t):
 		# now apply the names for named targets, if we saw any
 		for target, index_list in named_targets.items():
 			index_strs = '_'.join(['%02X' % i for i in index_list])
-			MakeName(target, 'jtbl_%04X_case_target_%s' % (insn.ea, index_strs))
-
+			idc.set_name(target, 'jtbl_%04X_case_target_%s' % (insn.ea, index_strs))
 
 	def _poke_operand(self, insn, op, read_flag, write_flag):
 		if op.type == o_mem:
@@ -436,19 +456,19 @@ class HoltekProcessor(processor_t):
 				add_dref(insn.ea, op.addr, dr_W)
 
 		if op.type == o_imm and INSN_DEFS[insn.itype][IDEF_OP_TYPE] == HTOP_BIT:
-			# make this an enum, if we can
-			# TODO: ignore some like ACC maybe?
-			# maybe also make sure we don't overwrite existing op_enums
-			bit = op.value
-			enum_addr = insn.Op1.addr
-			enum_id = self.helper.altval_ea(enum_addr, self.bitfield_enum_tag)
-			if enum_id == 0:
-				enum_id = add_enum(BADADDR, 'bit_%03X' % (enum_addr - self.ram_addr), 0)
-				self.helper.altset_ea(enum_addr, enum_id, self.bitfield_enum_tag)
-			member_id = get_enum_member(enum_id, bit, 0, DEFMASK)
-			if member_id == BADADDR:
-				add_enum_member(enum_id, 'b%03X:%d' % (enum_addr - self.ram_addr, bit), bit, DEFMASK)
-			op_enum(insn.ea, 1, enum_id, 0)
+					bit = op.value
+					enum_addr = insn.Op1.addr
+					enum_id = self.helper.altval_ea(enum_addr, self.bitfield_enum_tag)
+					if enum_id == 0:
+						# FIX: Use idc module
+						enum_id = idc.add_enum(BADADDR, 'bit_%03X' % (enum_addr - self.ram_addr), 0)
+						self.helper.altset_ea(enum_addr, enum_id, self.bitfield_enum_tag)
+					
+					# FIX: Blindly try to add the member (ignores errors if it already exists)
+					idc.add_enum_member(enum_id, 'b%03X:%d' % (enum_addr - self.ram_addr, bit), bit, -1)
+					
+					# FIX: Use idc module
+					idc.op_enum(insn.ea, 1, enum_id, 0)
 
 
 	SKIP_ITYPES = set((itypes.i_sza, itypes.i_sz, itypes.i_siza, itypes.i_siz, itypes.i_sdza, itypes.i_sdz, itypes.i_snz_bit, itypes.i_sz_bit))

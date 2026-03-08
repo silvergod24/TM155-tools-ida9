@@ -1,0 +1,66 @@
+
+
+> **Role & Objective:**
+> You are an expert reverse engineer and advanced IDAPython developer. I need you to write a complete, functional custom processor module for IDA Pro 9.3 for a specific target microcontroller/processor architecture.
+> **Target Architecture:** [INSERT ARCHITECTURE NAME HERE]
+> **Datasheet Link/Attachment:** [INSERT LINK OR ATTACH DOCUMENT HERE]
+> **Reference Template:** [PASTE OR ATTACH YOUR ht68fb560.py FILE HERE]
+> **Phase 1: Information Gathering & Shortcuts**
+> Before generating any IDA code, you must attempt to find pre-parsed machine-readable definitions for this architecture.
+> 1. Search the web for a **Ghidra SLEIGH file** (`.slaspec` or `.sinc`) for this architecture.
+> 2. Search the web for **GNU Binutils source code** (specifically the `opcodes/` directory C files) for this architecture.
+> 3. If you find these shortcuts, use them as your primary source of truth for the instruction bitmasks, registers, and memory map.
+> 
+> 
+> **Phase 2: Fallback Extraction Script (If Shortcuts Fail)**
+> If the shortcuts do not exist, are incomplete, or lack the necessary data, you must generate a standalone Python script to extract the data from the provided datasheet.
+> * This script should use appropriate libraries (like `camelot-py`, `tabula-py`, `PyPDF2`, or `re`) to parse the PDF.
+> * It must target the "Instruction Set Summary", register tables, and memory map sections.
+> * Output this extraction script as a separate file in your response.
+> 
+> 
+> **Phase 3: Module Generation & Coding Standards**
+> Generate the IDAPython script and JSON configuration file.
+> * **Structural Template:** You MUST use the provided Holtek (`ht68fb560.py`) script as the architectural foundation and structural template for this new module. Mimic its class structure (`processor_t`), its use of `INSN_DEFS` for instruction decoding, its emulator flow, and its operand rendering logic.
+> * **Documentation:** Add ample, clear documentation and inline comments explaining the logic of the instruction decoder, the emulator flow, and the memory mapping.
+> * **Conventions:** Follow standard Python conventions (PEP 8) for readability and maintainability.
+> 
+> 
+> **STRICT ANTI-HALLUCINATION RULE:**
+> You are acting as a precise, deterministic decompiler tool. You must absolutely NOT fabricate, guess, infer, or hallucinate any instructions, registers, memory addresses, or opcodes that are not explicitly defined in your gathered sources.
+> * If an instruction's bitmask or a register's address is missing or ambiguous, you must omit it entirely and add a Python comment: `# TODO: [Item Name] omitted due to missing/ambiguous documentation.`
+> 
+> 
+> **CRITICAL IDA 9.3 API CONSTRAINTS (Do Not Ignore):**
+> You MUST NOT use legacy IDC or IDA 7.0/8.0 functions. You must adhere to the following IDA 9.x changes:
+> * **No `ida_enum`:** This module is deleted. Use `from ida_typeinf import *`. To create enums, use `import idc` and call `idc.add_enum(BADADDR, "name", 0)` and `idc.add_enum_member(enum_id, "name", bit, -1)`. Do NOT use `DEFMASK`.
+> * **No Legacy Make/Set Functions:** `MakeByte`, `MakeName`, and `set_cmt` are deleted. Use `ida_bytes.create_data()`, `idc.set_name()`, and `idc.set_cmt()`.
+> * **No `BADADDR` by default:** You MUST explicitly include `from ida_idaapi import BADADDR`.
+> * **No `free_chunk`:** This is deleted. Hardcode a safe, high `start_ea` for virtual RAM segments to avoid overlapping with ROM.
+> * **Segment Creation (Strict 4-Argument Rule):** `add_segm_ex` takes exactly 4 arguments, and `set_segm_type` is deleted. You MUST create a `segment_t()` object:
+> ```python
+> seg = segment_t()
+> seg.start_ea = ram_start
+> seg.end_ea = ram_end
+> seg.align = saAbs
+> seg.comb = scPriv
+> seg.bitness = 0 # Adjust based on architecture
+> seg.type = SEG_IMEM 
+> add_segm_ex(seg, 'RAM_NAME', 'DATA', ADDSEG_NOSREG)
+> 
+> ```
+> 
+> 
+> * **Analyzer Return Value:** In `notify_ana(self, insn)`, you MUST return `insn.size` (the byte length of the instruction). Clear operands first: `insn.Op1.type = o_void` and `insn.Op2.type = o_void`.
+> * **Diagnostic Rendering:** Wrap the entire contents of `notify_out_insn` and `notify_out_operand` in `try...except Exception as e:` blocks, and use `traceback.print_exc()` to print errors.
+> 
+> 
+> **Required Outputs:**
+> Please provide your response structured with the following separate code blocks:
+> 1. `extractor.py` (Only if Phase 1 shortcuts failed)
+> 2. `[architecture_name].json` (The register database)
+> 3. `[architecture_name].py` (The IDA Pro 9.3 processor module)
+> 4. `README.md` (A simple guide explaining how to place these files in the `%APPDATA%/Hex-Rays/IDA Pro/procs` folder and how to load a binary).
+> 
+> 
+
