@@ -32,6 +32,8 @@ import traceback
 import idc
 # FIX - import to update legacy functions created in earlier script
 import ida_bytes
+# FIX - add cross reference for arrow creation in CFG
+from ida_xref import *
 
 BANK_COUNT = 6
 
@@ -464,47 +466,57 @@ class HoltekProcessor(processor_t):
 						enum_id = idc.add_enum(BADADDR, 'bit_%03X' % (enum_addr - self.ram_addr), 0)
 						self.helper.altset_ea(enum_addr, enum_id, self.bitfield_enum_tag)
 					
-					# FIX: Blindly try to add the member (ignores errors if it already exists)
-					idc.add_enum_member(enum_id, 'b%03X:%d' % (enum_addr - self.ram_addr, bit), bit, -1)
-					
-					# FIX: Use idc module
-					idc.op_enum(insn.ea, 1, enum_id, 0)
+						# FIX: Blindly try to add the member (ignores errors if it already exists)
+						# We must catch the ValueError if the enum member already exists!
+						try:
+							idc.add_enum_member(enum_id, 'b%03X:%d' % (enum_addr - self.ram_addr, bit), bit, -1)
+						except Exception:
+							pass # The enum member is already registered, so we safely move on
+						
+						# Apply the enum to the current dynamic operand
+						idc.op_enum(insn.ea, op.n, enum_id, 0)
 
 
 	SKIP_ITYPES = set((itypes.i_sza, itypes.i_sz, itypes.i_siza, itypes.i_siz, itypes.i_sdza, itypes.i_sdz, itypes.i_snz_bit, itypes.i_sz_bit))
 
 	def notify_emu(self, insn):
-		itype = insn.itype
-		feature = insn.get_canon_feature()
+		try:
+			itype = insn.itype
+			feature = insn.get_canon_feature()
 
-		# for most instructions, we want to chain onto the next
-		flow = (feature & CF_STOP) == 0
+			# for most instructions, we want to chain onto the next
+			flow = (feature & CF_STOP) == 0
 
-		if itype == itypes.i_jmp:
-			dest = get_opvalue_for_opcode(itype, get_wide_byte(insn.ea))
-			add_cref(insn.ea, dest, fl_JN)
-			flow = False
-		elif itype == itypes.i_call:
-			dest = get_opvalue_for_opcode(itype, get_wide_byte(insn.ea))
-			add_cref(insn.ea, dest, fl_CN)
-
-		self._poke_operand(insn, insn.Op1, feature & CF_USE1, feature & CF_CHG1)
-		self._poke_operand(insn, insn.Op2, feature & CF_USE2, feature & CF_CHG2)
-
-		if itype == itypes.i_addm:
-			pcl = self.ram_addr + reg_lookup.PCL
-			if insn.Op2.addr == pcl:
-				self._create_addm_pcl_jump_table(insn)
-				# no flow necessary as the jump table creates a bunch
-				# of its own coderefs
+			if itype == itypes.i_jmp:
+				dest = get_opvalue_for_opcode(itype, get_wide_byte(insn.ea))
+				add_cref(insn.ea, dest, fl_JN)
 				flow = False
+			elif itype == itypes.i_call:
+				dest = get_opvalue_for_opcode(itype, get_wide_byte(insn.ea))
+				add_cref(insn.ea, dest, fl_CN)
 
-		if flow:
-			add_cref(insn.ea, insn.ea + 1, fl_F)
-		if itype in self.SKIP_ITYPES:
-			add_cref(insn.ea, insn.ea + 2, fl_JN)
+			self._poke_operand(insn, insn.Op1, feature & CF_USE1, feature & CF_CHG1)
+			self._poke_operand(insn, insn.Op2, feature & CF_USE2, feature & CF_CHG2)
 
-		return 1
+			if itype == itypes.i_addm:
+				pcl = self.ram_addr + reg_lookup.PCL
+				if insn.Op2.addr == pcl:
+					self._create_addm_pcl_jump_table(insn)
+					# no flow necessary as the jump table creates a bunch
+					# of its own coderefs
+					flow = False
+
+			if flow:
+				add_cref(insn.ea, insn.ea + insn.size, fl_F)
+			if itype in self.SKIP_ITYPES:
+				add_cref(insn.ea, insn.ea + 2, fl_JN)
+
+			return 1
+		
+		except Exception as e:
+			print('notify_emu failed at 0x%X: %s' % (insn.ea, e))
+			traceback.print_exc()
+			return 1
 
 	def notify_out_operand(self, ctx, op):
 		try:
