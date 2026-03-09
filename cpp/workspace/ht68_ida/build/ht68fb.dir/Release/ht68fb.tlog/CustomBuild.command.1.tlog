@@ -1,0 +1,10 @@
+^C:\USERS\GADIS\DOCUMENTS\NEW_PROGRAMING\TM155-TOOLS-IDA9\CPP\WORKSPACE\HT68_IDA\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida -BC:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build --check-stamp-file C:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

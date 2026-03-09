@@ -1,0 +1,3 @@
+C:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build/CMakeFiles/ht68fb.dir
+C:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build/CMakeFiles/ZERO_CHECK.dir

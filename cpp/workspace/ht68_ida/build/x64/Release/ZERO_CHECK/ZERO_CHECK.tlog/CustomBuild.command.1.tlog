@@ -1,0 +1,10 @@
+^C:\USERS\GADIS\DOCUMENTS\NEW_PROGRAMING\TM155-TOOLS-IDA9\CPP\WORKSPACE\HT68_IDA\BUILD\CMAKEFILES\1C30091F1EC2A073FF5617FE70F55577\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida -BC:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/gadis/Documents/New_Programing/TM155-tools-ida9/cpp/workspace/ht68_ida/build/ht68fb_idp.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

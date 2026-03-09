@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\proc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\ana.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\emu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\out.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\ins.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\reg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{91BF86B8-8C44-37A6-A713-A58A4A42DA33}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\gadis\Documents\New_Programing\TM155-tools-ida9\cpp\workspace\ht68_ida\build\CMakeFiles\1c30091f1ec2a073ff5617fe70f55577\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{AF90180E-7DCA-3024-AB92-5FB2C23B45AD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
