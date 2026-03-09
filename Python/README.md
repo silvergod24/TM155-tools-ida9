@@ -1,41 +1,35 @@
-This project uses one prompt in order to create a new processor module 
-in IDAPython, for IDA9.3
+# Epiphany IDA 9.3 Processor Module
 
-## How This Works
+This package contains:
+- `epiphany.py` (processor module)
+- `epiphany.json` (register/memory database)
+- `extractor.py` (fallback PDF table extractor for opcode decode rows)
 
-Instead of forcing an AI to read a 500-page PDF datasheet and guess how to write a decompiler, this prompt enforces a strict three-phase pipeline:
+## Install
 
-1. **The Shortcut Phase:** The AI is instructed to first search for existing, open-source machine-readable definitions of your target architecture (like Ghidra SLEIGH files or GNU Binutils C source code). These are much more accurate than parsing PDFs.
-2. **The Extraction Phase (Fallback):** If shortcuts don't exist, the AI will write a targeted Python script using visual/tabular extraction libraries (like `camelot-py` or `tabula-py`) to rip the exact instruction bitmasks and register definitions out of your datasheet. 
-3. **The Generation Phase:** The AI takes the precise architecture data and wraps it in a modern, IDA 9.3-compliant `processor_t` class template, utilizing modern `ida_typeinf`, modern segment creation, and strict `try/except` diagnostic rendering blocks.
+1. Copy `epiphany.py` and `epiphany.json` to:
+   - `%APPDATA%\Hex-Rays\IDA Pro\procs\`
+2. Optional: copy `extractor.py` there too (or keep it elsewhere).
 
-## How to Use the Prompt
+## Load a Binary
 
-1. Grab the **Prompt** text.
-2. Fill in the `[INSERT ARCHITECTURE NAME HERE]` bracket.
-3. Provide the AI with the architecture data (if the shortcut doesn't work). You can do this by:
-   * Attaching the official PDF datasheet.
-   * Pasting a link to the datasheet.
-4. Provide the AI with a **Reference Template**. (Use a working, modern IDA 9.3 Python script, like the Holtek HT68FB560 script, so the AI knows exactly how to structure its classes and loops).
-5. Submit the prompt to the AI. 
+1. Open IDA Pro 9.3.
+2. Load your Epiphany binary.
+3. In the processor selector, choose `epiphany`.
+4. Finish load; the module will add the MMR segment and register labels.
 
-## Integrating the Generated Module into IDA Pro
+## Important Note About Decode Coverage
 
-The AI will output two primary files: an `[architecture].py` file and an `[architecture].json` file. Here is how to load them:
+The online manual text extraction did not expose `Table 66: Epiphany Instruction Decode Table`, so opcode bitmasks were not hardcoded in `epiphany.py`.
 
-### 1. Place the Files
-Copy both the `.py` and `.json` files into your IDA Pro user `procs` directory. Do not place them in the main IDA installation folder; use your user-specific application data folder:
-* **Windows:** `%APPDATA%\Hex-Rays\IDA Pro\procs\`
-* **Linux / macOS:** `~/.idapro/procs/`
+To fill decode rules from your local PDF:
+1. Install dependencies:
+   - `pip install PyPDF2 camelot-py tabula-py`
+2. Run:
+   - `python extractor.py --pdf epiphany_arch_ref.pdf --out epiphany_extracted.json`
+3. Validate extracted decode rows and convert them into IDA decode masks before enabling full analysis.
 
-*(Note: If the `procs` folder does not exist, simply create it).*
+## Troubleshooting
 
-### 2. Test the Module
-1. Launch IDA Pro 9.3.
-2. Drag and drop your raw firmware `.bin` or `.rom` file into the IDA window.
-3. In the "Load a new file" dialog, look at the **Processor type** dropdown menu.
-4. Select your newly generated processor from the list.
-5. Click **OK**.
-
-### 3. Troubleshooting
-Because the Master Prompt forces the AI to wrap its rendering callbacks (`notify_out_insn` and `notify_out_operand`) in `try/except` blocks, **IDA will not silently fail.** If the AI hallucinates a bad instruction mask or makes a deprecated API call, look at the **Output Window** at the bottom of the IDA interface. It will print a bright red Python traceback detailing exactly which line failed. You can simply copy that error, paste it back to the AI, and say: *"Fix this specific error adhering to the IDA 9.3 API rules."*
+- If output rendering fails, check IDA Output window for Python traceback.
+- If registers are not named, confirm `epiphany.json` is in `%APPDATA%\Hex-Rays\IDA Pro\procs\`.

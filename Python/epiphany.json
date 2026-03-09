@@ -1,0 +1,310 @@
+{
+  "metadata": {
+    "architecture": "epiphany",
+    "source": "Epiphany Architecture Reference Manual REV 14.03.11",
+    "notes": [
+      "Register addresses and names taken from Tables 27-31.",
+      "Bitfields are only included where explicitly documented."
+    ]
+  },
+  "memory_map": [
+    {
+      "name": "Interrupt Vector Table",
+      "start": "0x00000",
+      "end": "0x0003F",
+      "type": "memory"
+    },
+    {
+      "name": "Bank 0",
+      "start": "0x00040",
+      "end": "0x01FFF",
+      "type": "memory"
+    },
+    {
+      "name": "Bank 1",
+      "start": "0x02000",
+      "end": "0x03FFF",
+      "type": "memory"
+    },
+    {
+      "name": "Bank 2",
+      "start": "0x04000",
+      "end": "0x05FFF",
+      "type": "memory"
+    },
+    {
+      "name": "Bank 3",
+      "start": "0x06000",
+      "end": "0x07FFF",
+      "type": "memory"
+    },
+    {
+      "name": "Memory Mapped Registers",
+      "start": "0xF0000",
+      "end": "0xF07FF",
+      "type": "registers"
+    }
+  ],
+  "general_registers": {
+    "base": "0xF0000",
+    "count": 64,
+    "stride": 4,
+    "prefix": "R",
+    "comment": "General purpose register file"
+  },
+  "special_registers": [
+    {
+      "address": "0xF0400",
+      "name": "CONFIG",
+      "access": "RD/WR",
+      "comment": "Core configuration register"
+    },
+    {
+      "address": "0xF0404",
+      "name": "STATUS",
+      "access": "RD/WR",
+      "comment": "Core status register"
+    },
+    {
+      "address": "0xF0408",
+      "name": "PC",
+      "access": "RD/WR",
+      "comment": "Program counter"
+    },
+    {
+      "address": "0xF040C",
+      "name": "DEBUGSTATUS",
+      "access": "RD",
+      "comment": "Debug status register"
+    },
+    {
+      "address": "0xF0414",
+      "name": "LC",
+      "access": "RD/WR",
+      "comment": "Hardware loop counter"
+    },
+    {
+      "address": "0xF0418",
+      "name": "LS",
+      "access": "RD/WR",
+      "comment": "Hardware loop start address"
+    },
+    {
+      "address": "0xF041C",
+      "name": "LE",
+      "access": "RD/WR",
+      "comment": "Hardware loop end address"
+    },
+    {
+      "address": "0xF0420",
+      "name": "IRET",
+      "access": "RD/WR",
+      "comment": "Interrupt PC return value"
+    },
+    {
+      "address": "0xF0424",
+      "name": "IMASK",
+      "access": "RD/WR",
+      "comment": "Interrupt mask"
+    },
+    {
+      "address": "0xF0428",
+      "name": "ILAT",
+      "access": "RD/WR",
+      "comment": "Interrupt latch"
+    },
+    {
+      "address": "0xF042C",
+      "name": "ILATST",
+      "access": "WR",
+      "comment": "Alias for setting interrupts"
+    },
+    {
+      "address": "0xF0430",
+      "name": "ILATCL",
+      "access": "WR",
+      "comment": "Alias for clearing interrupts"
+    },
+    {
+      "address": "0xF0434",
+      "name": "IPEND",
+      "access": "RD/WR",
+      "comment": "Interrupts currently in process"
+    },
+    {
+      "address": "0xF0440",
+      "name": "FSTATUS",
+      "access": "WR",
+      "comment": "Alias for writing to all STATUS bits"
+    },
+    {
+      "address": "0xF0448",
+      "name": "DEBUGCMD",
+      "access": "WR",
+      "comment": "Debug command register"
+    },
+    {
+      "address": "0xF070C",
+      "name": "RESETCORE",
+      "access": "WR",
+      "comment": "Per core software reset"
+    },
+    {
+      "address": "0xF0438",
+      "name": "CTIMER0",
+      "access": "RD/WR",
+      "comment": "Core timer 0"
+    },
+    {
+      "address": "0xF043C",
+      "name": "CTIMER1",
+      "access": "RD/WR",
+      "comment": "Core timer 1"
+    },
+    {
+      "address": "0xF0604",
+      "name": "MEMSTATUS",
+      "access": "RD/WR",
+      "comment": "Current state of memory protection status bits"
+    },
+    {
+      "address": "0xF0608",
+      "name": "MEMPROTECT",
+      "access": "RD/WR",
+      "comment": "Defines active memory protection mode"
+    },
+    {
+      "address": "0xF0500",
+      "name": "DMA0CONFIG",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 configuration"
+    },
+    {
+      "address": "0xF0504",
+      "name": "DMA0STRIDE",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 stride"
+    },
+    {
+      "address": "0xF0508",
+      "name": "DMA0COUNT",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 count"
+    },
+    {
+      "address": "0xF050C",
+      "name": "DMA0SRCADDR",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 source address"
+    },
+    {
+      "address": "0xF0510",
+      "name": "DMA0DSTADDR",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 destination address"
+    },
+    {
+      "address": "0xF0514",
+      "name": "DMA0AUTO0",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 chained transfer register 0"
+    },
+    {
+      "address": "0xF0518",
+      "name": "DMA0AUTO1",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 chained transfer register 1"
+    },
+    {
+      "address": "0xF051C",
+      "name": "DMA0STATUS",
+      "access": "RD/WR",
+      "comment": "DMA channel 0 status"
+    },
+    {
+      "address": "0xF0520",
+      "name": "DMA1CONFIG",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 configuration"
+    },
+    {
+      "address": "0xF0524",
+      "name": "DMA1STRIDE",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 stride"
+    },
+    {
+      "address": "0xF0528",
+      "name": "DMA1COUNT",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 count"
+    },
+    {
+      "address": "0xF052C",
+      "name": "DMA1SRCADDR",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 source address"
+    },
+    {
+      "address": "0xF0530",
+      "name": "DMA1DSTADDR",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 destination address"
+    },
+    {
+      "address": "0xF0534",
+      "name": "DMA1AUTO0",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 chained transfer register 0"
+    },
+    {
+      "address": "0xF0538",
+      "name": "DMA1AUTO1",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 chained transfer register 1"
+    },
+    {
+      "address": "0xF053C",
+      "name": "DMA1STATUS",
+      "access": "RD/WR",
+      "comment": "DMA channel 1 status"
+    },
+    {
+      "address": "0xF0700",
+      "name": "MESHCONFIG",
+      "access": "RD",
+      "comment": "Mesh network configuration register"
+    },
+    {
+      "address": "0xF0704",
+      "name": "COREID",
+      "access": "RD",
+      "comment": "Core ID register"
+    },
+    {
+      "address": "0xF0708",
+      "name": "MULTICAST",
+      "access": "RD/WR",
+      "comment": "Multicast configuration register"
+    },
+    {
+      "address": "0xF0710",
+      "name": "CMESHROUTE",
+      "access": "RD/WR",
+      "comment": "On-chip mesh route configuration"
+    },
+    {
+      "address": "0xF0714",
+      "name": "XMESHROUTE",
+      "access": "RD/WR",
+      "comment": "Off-chip east/west route configuration"
+    },
+    {
+      "address": "0xF0718",
+      "name": "RMESHROUTE",
+      "access": "RD/WR",
+      "comment": "Off-chip north/south route configuration"
+    }
+  ]
+}
+

@@ -2,9 +2,9 @@
 
 > **Role & Objective:**
 > You are an expert reverse engineer and advanced IDAPython developer. I need you to write a complete, functional custom processor module for IDA Pro 9.3 for a specific target microcontroller/processor architecture.
-> **Target Architecture:** [INSERT ARCHITECTURE NAME HERE]
-> **Datasheet Link/Attachment:** [INSERT LINK OR ATTACH DOCUMENT HERE]
-> **Reference Template:** [PASTE OR ATTACH YOUR ht68fb560.py FILE HERE]
+> **Target Architecture:** epiphany
+> **Datasheet Link/Attachment:** https://www.adapteva.com/docs/epiphany_arch_ref.pdf
+> **Reference Template:** "ida-module\ht68fb560.py"
 > **Phase 1: Information Gathering & Shortcuts**
 > Before generating any IDA code, you must attempt to find pre-parsed machine-readable definitions for this architecture.
 > 1. Search the web for a **Ghidra SLEIGH file** (`.slaspec` or `.sinc`) for this architecture.
